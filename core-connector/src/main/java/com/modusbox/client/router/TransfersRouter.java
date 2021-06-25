@@ -1,54 +1,67 @@
 package com.modusbox.client.router;
 
 import com.modusbox.client.exception.RouteExceptionHandlingConfigurer;
-import com.modusbox.client.processor.EncodeAuthHeader;
-import com.modusbox.client.processor.TrimMFICode;
+import io.prometheus.client.Counter;
+import io.prometheus.client.Histogram;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
-
+import org.apache.camel.model.dataformat.JsonLibrary;
 
 public class TransfersRouter extends RouteBuilder {
 
-    private final EncodeAuthHeader encodeAuthHeader = new EncodeAuthHeader();
-    private final TrimMFICode trimMFICode = new TrimMFICode();
-    private final RouteExceptionHandlingConfigurer exceptionHandlingConfigurer = new RouteExceptionHandlingConfigurer();
+    private final RouteExceptionHandlingConfigurer exception = new RouteExceptionHandlingConfigurer();
+
+    private static final String ROUTE_ID = "com.modusbox.postTransfers";
+    private static final String COUNTER_NAME = "counter_post_transfers_requests";
+    private static final String TIMER_NAME = "histogram_post_transfers_timer";
+    private static final String HISTOGRAM_NAME = "histogram_post_transfers_requests_latency";
+
+    public static final Counter requestCounter = Counter.build()
+            .name(COUNTER_NAME)
+            .help("Total requests for POST /transfers.")
+            .register();
+
+    private static final Histogram requestLatency = Histogram.build()
+            .name(HISTOGRAM_NAME)
+            .help("Request latency in seconds for POST /transfers.")
+            .register();
 
     public void configure() {
-        // Add our global exception handling strategy
-        exceptionHandlingConfigurer.configureExceptionHandling(this);
 
-        from("direct:postTransfers")
-                .routeId("com.modusbox.postTransfers")
+        // Add custom global exception handling strategy
+        exception.configureExceptionHandling(this);
+
+        from("direct:postTransfers").routeId(ROUTE_ID).doTry()
+                .process(exchange -> {
+                    requestCounter.inc(1); // increment Prometheus Counter metric
+                    exchange.setProperty(TIMER_NAME, requestLatency.startTimer()); // initiate Prometheus Histogram metric
+                })
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-                                                                "'Request received, POST /transfers', " +
-                                                                "null, null, 'Input Payload: ${body}')")
-            .setHeader("idType", simple("${body.getTo().getIdType()}"))
-            .setHeader("idValue", simple("${body.getTo().getIdValue()}"))
-            .process(trimMFICode)
-            .setProperty("origPayload", simple("${body}"))
-
-			.bean("postTransfersRequest")
-
-            .removeHeaders("CamelHttp*")
-            .setHeader("Content-Type", constant("application/json"))
-            .setHeader("Accept", constant("application/vnd.mambu.v2+json"))
-            .setHeader(Exchange.HTTP_METHOD, constant("POST"))
-            .setProperty("authHeader", simple("${properties:easy.mambu.username}:${properties:easy.mambu.password}"))
-            .process(encodeAuthHeader)
-//            .toD("{{easy.mambu.host}}/loans/"+ simple("${exchangeProperty.origPayload?.getTo().getIdValue()}").getText() +"/repayment-transactions")
-//            .toD("https://{{easy.mambu.host}}/loans/${exchangeProperty.origPayload?.getTo().getIdValue()}/repayment-transactions")
-            .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-                                                                "'Calling Mambu API, getLoanRepaymentTransactions, " +
-                                                                "POST https://{{easy.mambu.host}}/loans/${header.idValueTrimmed}/repayment-transactions', " +
-                                                                "'Tracking the request', 'Track the response', 'Input Payload: ${body}')")
-            .toD("https://{{easy.mambu.host}}/loans/${header.idValueTrimmed}/repayment-transactions")
-            .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-                                                                "'Response from Mambu API, getLoanRepaymentTransactions: ${body}', " +
-                                                                "'Tracking the response', 'Verify the response', null)")
-            .bean("postTransfersResponse")
-            .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-                                                                "'Final Response: ${body}', " +
-                                                                "null, null, 'Response of POST /transfers API')")
+                        "'Request received, " + ROUTE_ID + "', null, null, 'Input Payload: ${body}')") // default logging
+                /*
+                 * BEGIN processing
+                 */
+                .setProperty("origPayload", simple("${body}"))
+                .removeHeaders("CamelHttp*")
+                .setHeader(Exchange.HTTP_METHOD, constant("POST"))
+                .setHeader("Content-Type", constant("application/json"))
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Calling backend API, postTransfers, POST {{backend.endpoint}}', " +
+                        "'Tracking the request', 'Track the response', 'Input Payload: ${body}')")
+                .marshal().json(JsonLibrary.Gson)
+                .toD("{{backend.endpoint}}/transfers?bridgeEndpoint=true&throwExceptionOnFailure=false")
+                .unmarshal().json(JsonLibrary.Gson)
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Response from backend API, postTransfers: ${body}', " +
+                        "'Tracking the response', 'Verify the response', null)")
+                /*
+                 * END processing
+                 */
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Send response, " + ROUTE_ID + "', null, null, 'Output Payload: ${body}')") // default logging
+                .doFinally().process(exchange -> {
+            ((Histogram.Timer) exchange.getProperty(TIMER_NAME)).observeDuration(); // stop Prometheus Histogram metric
+        }).end()
         ;
 
     }
