@@ -146,6 +146,10 @@ paths:
       responses:
         200:
           description: The transfer was accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/transferResponseInbound'
         400:
           $ref: '#/components/responses/400'
         500:

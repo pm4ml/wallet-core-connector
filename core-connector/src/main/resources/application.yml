@@ -27,4 +27,4 @@ backend:
 #informed through runtime variable (java -Doutbound.endpoint=http://localhost:3003)
 outbound:
 #  endpoint:  http://localhost:3003
-  endpoint:  http://localhost:4001 # for local dev
+  endpoint:   http://localhost:4001

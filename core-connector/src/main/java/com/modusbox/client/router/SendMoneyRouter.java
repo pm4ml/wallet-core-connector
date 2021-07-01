@@ -77,7 +77,7 @@ public class SendMoneyRouter extends RouteBuilder {
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Calling outbound API, putTransfersById', " +
                         "'Tracking the request', 'Track the response', " +
-                        "'Request sent to PUT https://{{outbound.endpoint}}/transfers/${header.transferId}')")
+                        "'Request sent to PUT {{outbound.endpoint}}/transfers/${header.transferId}')")
 .process(exchange -> System.out.println())
 //                .marshal().json(JsonLibrary.Gson)
 //                .marshal().json()
