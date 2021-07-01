@@ -39,7 +39,7 @@
     <modules>
         <module>core-connector</module>
         <module>core-connector-interface</module>
-        <module>core-connector-rest-mock</module>
+<!--        <module>core-connector-rest-mock</module>-->
         <!--        <module>client-adapter-soap-mock</module>-->
     </modules>
 
