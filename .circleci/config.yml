@@ -18,7 +18,7 @@ workflows:
     jobs:
       - docker/publish:
           executor: default-machine
-          context: wmt
+          context: pm4ml-ci
           before_build:
             - restore_cache:
                 keys:
@@ -43,11 +43,11 @@ workflows:
                   fi
           lint-dockerfile: false
           image: $CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME
-          # image: mbx-cicd-deployer/$CIRCLE_PROJECT_REPONAME
+#          image: mbx-cicd-deployer/$CIRCLE_PROJECT_REPONAME
           tag: $IMAGE_TAG
           registry: $DOCKER_REGISTRY
           docker-username: DOCKER_USER
-          docker-password:  
+          docker-password: DOCKER_PASSWORD
           filters:
             tags:
               only: /v[0-9]+(\.[0-9]+)*(\-snapshot)?(\-hotfix(\.[0-9]+))?/
