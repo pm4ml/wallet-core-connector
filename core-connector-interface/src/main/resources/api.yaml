@@ -13,6 +13,21 @@ info:
 
 paths:
   #Outbound API (Payer DFSP → Payment Manager → Mojaloop Switch)
+  /health:
+    get:
+      description: >
+        The HTTP request `GET /health` is used to check if application is up and running.
+      operationId: getHealth
+      tags:
+        - Health
+      responses:
+        200:
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: string
+
   /sendmoney:
     post:
       summary: Sends money from one account to another
