@@ -23,7 +23,7 @@
         <compiler.source.version>1.8</compiler.source.version>
         <compiler.target.version>1.8</compiler.target.version>
 
-        <camel.version>3.1.0</camel.version>
+        <camel.version>3.7.3</camel.version>
         <spring-boot.version>2.2.5.RELEASE</spring-boot.version>
 
         <maven.build-helper.version>3.0.0</maven.build-helper.version>

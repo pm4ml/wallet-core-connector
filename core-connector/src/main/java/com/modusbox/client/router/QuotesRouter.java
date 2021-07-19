@@ -43,7 +43,14 @@ public class QuotesRouter extends RouteBuilder {
 				.setProperty("origPayload", simple("${body}"))
 				.setHeader(Exchange.HTTP_RESPONSE_CODE, constant(200))
 				.setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
-				.bean("postQuoterequestsResponseMock")
+
+				// Do Datasonnet mapping
+//				.bean("postQuoterequestsResponseMock")
+				.marshal().json()
+				.transform(datasonnet("resource:classpath:mappings/postQuoterequestsResponseMock.ds"))
+				.setBody(simple("${body.content}"))
+				.marshal().json()
+
 				/*
 				 * END processing
 				 */

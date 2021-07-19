@@ -35,8 +35,8 @@ public class HealthRouter extends RouteBuilder {
 				requestCounter.inc(1); // increment Prometheus Counter metric
 				exchange.setProperty(TIMER_NAME, requestLatency.startTimer()); // initiate Prometheus Histogram metric
 			})
-			.to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-					"'Request received, " + ROUTE_ID + "', null, null, null)") // default logging
+//			.to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+//					"'Request received, " + ROUTE_ID + "', null, null, null)") // default logging
 			/*
 			 * BEGIN processing
 			 */
@@ -46,8 +46,8 @@ public class HealthRouter extends RouteBuilder {
 			/*
 			 * END processing
 			 */
-			.to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-					"'Send response, " + ROUTE_ID + "', null, null, 'Output Payload: ${body}')") // default logging
+//			.to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+//					"'Send response, " + ROUTE_ID + "', null, null, 'Output Payload: ${body}')") // default logging
 			.doFinally().process(exchange -> {
 				((Histogram.Timer) exchange.getProperty(TIMER_NAME)).observeDuration(); // stop Prometheus Histogram metric
 			}).end()

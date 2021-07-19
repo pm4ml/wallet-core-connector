@@ -2,7 +2,8 @@ package com.modus.client;
 
 import com.datasonnet.Mapper;
 import com.datasonnet.document.Document;
-import com.datasonnet.document.StringDocument;
+import com.datasonnet.document.DefaultDocument;
+import com.datasonnet.document.MediaType;
 import org.apache.commons.io.IOUtils;
 import org.json.JSONException;
 import org.junit.Test;
@@ -32,21 +33,26 @@ public class DatasonnetMappingTests2 {
         InputStream mappingStream = this.getClass().getClassLoader().getResourceAsStream(mappingFilePath);
         String mapping = IOUtils.toString(mappingStream);
 
-        String headersJson = "{\"accountNo\":\"123\"}";
-        StringDocument headersDocument = new StringDocument(headersJson, "application/json");
+        String idTypeHeaderJson = "{\"idType\":\"ACCOUNT_ID\"}";
+        String idValueHeaderJson = "{\"idValue\":\"123\"}";
+        DefaultDocument idTypeHeaderDocument = new DefaultDocument(idTypeHeaderJson, MediaType.valueOf("application/json"));
+        DefaultDocument idValueHeaderDocument = new DefaultDocument(idValueHeaderJson, MediaType.valueOf("application/json"));
 
-        Map<String, Document> jsonnetVars = new HashMap<String, Document>();
-        jsonnetVars.put("headers", headersDocument);
-        jsonnetVars.put("header", headersDocument);
+        Map<String, Document<?>> jsonnetVars = new HashMap<String, Document<?>>();
+        jsonnetVars.put("headers", idValueHeaderDocument);
+        jsonnetVars.put("header", idValueHeaderDocument);
+
+        jsonnetVars.put("headers", idTypeHeaderDocument);
+        jsonnetVars.put("header", idTypeHeaderDocument);
 
         String inputData = "[{\"Status\":{\"transactionId\":null,\"messageId\":null,\"successIndicator\":\"Success\",\"application\":null},\"ACCTVIEWType\":{\"enquiryInputCollection\":null,\"gACCTVIEWDetailType\":{\"mACCTVIEWDetailType\":{\"ACCOUNTTITLE1\":\"Test Account Name\"}}}}]";
-        StringDocument payload = new StringDocument(inputData, "application/json");
+        DefaultDocument payload = new DefaultDocument(inputData, MediaType.valueOf("application/json"));
 
-        Mapper mapper = new Mapper(mapping, jsonnetVars.keySet(), namedImports, true, true);
-        Document mappedDoc = mapper.transform(payload, jsonnetVars, "application/json");
-        Object mappedBody = mappedDoc.canGetContentsAs(String.class) ? mappedDoc.getContentsAsString() : mappedDoc.getContentsAsObject();
+        Mapper mapper = new Mapper(mapping, jsonnetVars.keySet(), namedImports, true);
+        DefaultDocument mappedDoc = (DefaultDocument) mapper.transform(payload, jsonnetVars, MediaType.valueOf("application/json"));
+        Object mappedBody = mappedDoc.getContent();
 
-        String expectedOutput = "{\"type\":\"CONSUMER\",\"idType\":\"ACCOUNT_ID\",\"idValue\":\"123\",\"displayName\":\"Test Account Name\"}";
+        String expectedOutput = "{\"type\":\"CONSUMER\",\"idType\":\"ACCOUNT_ID\",\"idValue\":\"123\"}";
         JSONAssert.assertEquals(expectedOutput, mappedBody.toString(), true);
     }
 

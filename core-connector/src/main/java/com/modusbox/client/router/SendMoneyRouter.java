@@ -19,12 +19,16 @@ public class SendMoneyRouter extends RouteBuilder {
                     "'Request received, POST /sendmoney', " +
                     "null, null, 'Input Payload: ${body}')")
             .setProperty("origPayload", simple("${body}"))
-.process(exchange -> System.out.println())
             .removeHeaders("CamelHttp*")
             .setHeader(Exchange.HTTP_METHOD, constant("POST"))
             .setHeader("Content-Type", constant("application/json"))
             // Prune empty items from the request
-            .process("postSendMoneyRequest")
+//            .process("postSendMoneyRequest")
+            .marshal().json()
+            .transform(datasonnet("resource:classpath:mappings/postSendMoneyRequest.ds"))
+            .setBody(simple("${body.content}"))
+            .marshal().json()
+
             .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                     "'Calling outbound API, postTransfers, " +
                     "POST {{outbound.endpoint}}', " +
@@ -48,7 +52,12 @@ public class SendMoneyRouter extends RouteBuilder {
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
 //.process(exchange -> System.out.println())
-                .process("putTransfersAcceptPartyRequest")
+//                .process("putTransfersAcceptPartyRequest")
+                .marshal().json()
+                .transform(datasonnet("resource:classpath:mappings/putTransfersAcceptPartyRequest.ds"))
+                .setBody(simple("${body.content}"))
+                .marshal().json()
+
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Calling outbound API, putTransfersAcceptParty, " +
                         "PUT {{outbound.endpoint}}/transfers/${exchangeProperty.postSendMoneyInitial?.get('transferId')}', " +
@@ -73,12 +82,16 @@ public class SendMoneyRouter extends RouteBuilder {
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
                 // Will convert to JSON and only take the accept quote section
-                .process("putTransfersAcceptQuoteRequest")
+//                .process("putTransfersAcceptQuoteRequest")
+                .marshal().json()
+                .transform(datasonnet("resource:classpath:mappings/putTransfersAcceptQuoteRequest.ds"))
+                .setBody(simple("${body.content}"))
+                .marshal().json()
+
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Calling outbound API, putTransfersById', " +
                         "'Tracking the request', 'Track the response', " +
                         "'Request sent to PUT {{outbound.endpoint}}/transfers/${header.transferId}')")
-.process(exchange -> System.out.println())
 //                .marshal().json(JsonLibrary.Gson)
 //                .marshal().json()
                 .toD("{{outbound.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true")
