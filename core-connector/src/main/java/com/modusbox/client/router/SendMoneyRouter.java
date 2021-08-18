@@ -41,9 +41,9 @@ public class SendMoneyRouter extends RouteBuilder {
                     "'Response from outbound API, postTransfers: ${body}', " +
                     "'Tracking the response', 'Verify the response', null)")
 //.process(exchange -> System.out.println())
-            .setProperty("postSendMoneyInitial", body())
+//            .setProperty("postSendMoneyInitial", body())
             // Send request to accept the party instead of hard coding AUTO_ACCEPT_PARTY: true
-            .to("direct:putTransfersAcceptParty")
+//            .to("direct:putTransfersAcceptParty")
         ;
 
         from("direct:putTransfersAcceptParty")
@@ -81,11 +81,13 @@ public class SendMoneyRouter extends RouteBuilder {
                 .removeHeaders("CamelHttp*")
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
+
                 // Will convert to JSON and only take the accept quote section
-//                .process("putTransfersAcceptQuoteRequest")
+//.process(exchange -> System.out.println())
                 .marshal().json()
                 .transform(datasonnet("resource:classpath:mappings/putTransfersAcceptQuoteRequest.ds"))
                 .setBody(simple("${body.content}"))
+//.process(exchange -> System.out.println())
                 .marshal().json()
 
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +

@@ -11,7 +11,7 @@ public class PartiesRouter extends RouteBuilder {
 
 	private final RouteExceptionHandlingConfigurer exception = new RouteExceptionHandlingConfigurer();
 
-	private static final String ROUTE_ID = "com.modusbox.getParties";
+	private static final String ROUTE_ID = "com.modusbox.getPartiesByIdTypeIdValue";
 	private static final String COUNTER_NAME = "counter_get_parties_requests";
 	private static final String TIMER_NAME = "histogram_get_parties_timer";
 	private static final String HISTOGRAM_NAME = "histogram_get_parties_requests_latency";
@@ -31,7 +31,7 @@ public class PartiesRouter extends RouteBuilder {
 		// Add custom global exception handling strategy
 		exception.configureExceptionHandling(this);
 
-		from("direct:getPartiesByIdType").routeId(ROUTE_ID).doTry()
+		from("direct:getPartiesByIdTypeIdValue").routeId(ROUTE_ID).doTry()
 				.process(exchange -> {
 					requestCounter.inc(1); // increment Prometheus Counter metric
 					exchange.setProperty(TIMER_NAME, requestLatency.startTimer()); // initiate Prometheus Histogram metric
