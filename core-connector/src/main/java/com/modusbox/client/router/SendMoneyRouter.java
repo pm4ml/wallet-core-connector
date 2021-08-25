@@ -64,10 +64,6 @@ public class SendMoneyRouter extends RouteBuilder {
 
             .toD("{{outbound.endpoint}}/transfers?bridgeEndpoint=true")
             .unmarshal().json()
-
-            // Add CORS headers
-            .process(corsFilter)
-
             .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                     "'Response from outbound API, postTransfers: ${body}', " +
                     "'Tracking the response', 'Verify the response', null)")
@@ -75,6 +71,9 @@ public class SendMoneyRouter extends RouteBuilder {
 //            .setProperty("postSendMoneyInitial", body())
             // Send request to accept the party instead of hard coding AUTO_ACCEPT_PARTY: true
 //            .to("direct:putTransfersAcceptParty")
+
+            // Add CORS headers
+            .process(corsFilter)
 
             .process(exchange -> {
                 ((Histogram.Timer) exchange.getProperty(TIMER_NAME_POST)).observeDuration(); // stop Prometheus Histogram metric
@@ -134,6 +133,10 @@ public class SendMoneyRouter extends RouteBuilder {
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from outbound API, putTransfersById: ${body}', " +
                         "'Tracking the response', 'Verify the response', null)")
+
+                // Add CORS headers
+                .process(corsFilter)
+
                 .process(exchange -> {
                     ((Histogram.Timer) exchange.getProperty(TIMER_NAME_PUT)).observeDuration(); // stop Prometheus Histogram metric
                 })
