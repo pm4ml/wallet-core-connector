@@ -1,6 +1,7 @@
 package com.modusbox.client.router;
 
 import com.modusbox.client.exception.CamelErrorProcessor;
+import com.modusbox.client.processor.CorsFilter;
 import org.apache.camel.builder.RouteBuilder;
 
 import javax.annotation.Generated;
@@ -13,6 +14,8 @@ public final class CoreConnectorAPI extends RouteBuilder {
     /**
      * Defines Apache Camel routes using REST DSL fluent API.
      */
+    private final CorsFilter corsFilter = new CorsFilter();
+
     public void configure() {
 
 //        restConfiguration().component("jetty").port(3000);
@@ -31,6 +34,8 @@ public final class CoreConnectorAPI extends RouteBuilder {
         ;
 
         from("cxfrs:bean:api-rs-server?bindingStyle=SimpleConsumer")
+                // Add CORS headers
+                .process(corsFilter)
                 .to("bean-validator://x")
                 .toD("direct:${header.operationName}");
 

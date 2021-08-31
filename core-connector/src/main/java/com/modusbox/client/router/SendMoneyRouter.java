@@ -64,6 +64,10 @@ public class SendMoneyRouter extends RouteBuilder {
 
             .toD("{{outbound.endpoint}}/transfers?bridgeEndpoint=true")
             .unmarshal().json()
+
+            // Check for account closed/written off message from CBS
+            .to("direct:extensionListCheckError")
+
             .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                     "'Response from outbound API, postTransfers: ${body}', " +
                     "'Tracking the response', 'Verify the response', null)")
@@ -128,7 +132,7 @@ public class SendMoneyRouter extends RouteBuilder {
                         "'Tracking the request', 'Track the response', " +
                         "'Request sent to PUT {{outbound.endpoint}}/transfers/${header.transferId}')")
 //                .marshal().json()
-                .toD("{{outbound.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true")
+                .toD("{{outbound.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true" + simple("$body"))
                 .unmarshal().json()
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from outbound API, putTransfersById: ${body}', " +
@@ -140,6 +144,21 @@ public class SendMoneyRouter extends RouteBuilder {
                 .process(exchange -> {
                     ((Histogram.Timer) exchange.getProperty(TIMER_NAME_PUT)).observeDuration(); // stop Prometheus Histogram metric
                 })
+        ;
+
+        from("direct:extensionListCheckError")
+                .routeId("com.modusbox.extensionListCheckError")
+
+                // Check for account closed/written off message from CBS
+                .marshal().json()
+                .transform(datasonnet("resource:classpath:mappings/extensionListCheckError.ds"))
+                .setBody(simple("${body.content}"))
+
+                // Conditional whether errorMessage was found
+                .choice()
+                    .when(simple("${body.get('statusCode')} == '3241'"))
+                        .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(409))
+                .end()
         ;
     }
 }

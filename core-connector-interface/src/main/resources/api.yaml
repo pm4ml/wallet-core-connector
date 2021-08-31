@@ -623,6 +623,12 @@ components:
       maxLength: 125
       description: Identifier of the party.
 
+    idSubValue:
+      type: string
+      minLength: 1
+      maxLength: 128
+      description: Either a sub-identifier of a `{idValue}`, or a sub-type of the `{idType}`, normally a `{personalIdType}`, for example a phone number associated with an account
+
     ilpCondition:
       type: string
       pattern: '^[A-Za-z0-9-_]{43}$'
@@ -1206,6 +1212,8 @@ components:
           $ref: '#/components/schemas/idType'
         idValue:
           $ref: '#/components/schemas/idValue'
+        idSubValue:
+          $ref: '#/components/schemas/idSubValue'
         displayName:
           $ref: '#/components/schemas/partyName'
           description: Display name of party, if known.
@@ -1240,6 +1248,8 @@ components:
         idValue:
           type: string
           description: The identifier string used to identify the sender.
+        idSubValue:
+          $ref: '#/components/schemas/idSubValue'
         displayName:
           $ref: '#/components/schemas/partyName'
           description: Display name of the sender, if known.

@@ -27,6 +27,7 @@
     <bean id="healthRouter" class="com.modusbox.client.router.HealthRouter" />
     <bean id="customJsonMessage" class="com.modusbox.log4j2.message.CustomJsonMessageImpl" />
     <bean id="customErrorRouter" class="com.modusbox.client.router.CustomErrorRouter" />
+    <bean id="corsFilter" class="org.apache.cxf.rs.security.cors.CrossOriginResourceSharingFilter" />
 
     <camel:camelContext>
 <!--        <camel:package>com.modusbox.client.router</camel:package>-->
@@ -56,6 +57,7 @@
         <camelcxf:providers>
             <ref bean="jacksonJsonProvider"/>
             <ref bean="globalExceptionMapper"/>
+            <ref bean="corsFilter"/>
         </camelcxf:providers>
     </camelcxf:rsServer>
 

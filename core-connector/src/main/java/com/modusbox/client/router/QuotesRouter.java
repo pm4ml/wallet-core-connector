@@ -1,6 +1,7 @@
 package com.modusbox.client.router;
 
 import com.modusbox.client.exception.RouteExceptionHandlingConfigurer;
+import com.modusbox.client.processor.CorsFilter;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Histogram;
 import org.apache.camel.Exchange;
@@ -9,6 +10,7 @@ import org.apache.camel.builder.RouteBuilder;
 public class QuotesRouter extends RouteBuilder {
 
 	private final RouteExceptionHandlingConfigurer exception = new RouteExceptionHandlingConfigurer();
+	private final CorsFilter corsFilter = new CorsFilter();
 
 	private static final String ROUTE_ID = "com.modusbox.postQuoterequests";
 	private static final String COUNTER_NAME = "counter_post_quoterequests_requests";
@@ -50,6 +52,9 @@ public class QuotesRouter extends RouteBuilder {
 				.transform(datasonnet("resource:classpath:mappings/postQuoterequestsResponseMock.ds"))
 				.setBody(simple("${body.content}"))
 				.marshal().json()
+
+				// Add CORS headers
+				.process(corsFilter)
 
 				/*
 				 * END processing

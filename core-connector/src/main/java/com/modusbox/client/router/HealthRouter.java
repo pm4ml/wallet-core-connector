@@ -32,8 +32,6 @@ public class HealthRouter extends RouteBuilder {
 		// Add custom global exception handling strategy
 		exception.configureExceptionHandling(this);
 
-
-
 		from("direct:getHealth").routeId(ROUTE_ID).doTry()
 			.process(exchange -> {
 				requestCounter.inc(1); // increment Prometheus Counter metric
@@ -45,7 +43,7 @@ public class HealthRouter extends RouteBuilder {
 			 * BEGIN processing
 			 */
 			// Add CORS headers
-			.process(corsFilter)
+//			.process(corsFilter)
 			.setHeader(Exchange.HTTP_RESPONSE_CODE, constant(200))
 			.setHeader(Exchange.CONTENT_TYPE, constant("application/json"))
 			.setBody(constant("OK"))

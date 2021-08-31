@@ -1,6 +1,7 @@
 package com.modusbox.client.router;
 
 import com.modusbox.client.exception.RouteExceptionHandlingConfigurer;
+import com.modusbox.client.processor.CorsFilter;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Histogram;
 import org.apache.camel.Exchange;
@@ -10,6 +11,7 @@ import org.apache.camel.model.dataformat.JsonLibrary;
 public class PartiesRouter extends RouteBuilder {
 
 	private final RouteExceptionHandlingConfigurer exception = new RouteExceptionHandlingConfigurer();
+	private final CorsFilter corsFilter = new CorsFilter();
 
 	private static final String ROUTE_ID = "com.modusbox.getPartiesByIdTypeIdValue";
 	private static final String COUNTER_NAME = "counter_get_parties_requests";
@@ -53,6 +55,10 @@ public class PartiesRouter extends RouteBuilder {
 						"'Request sent to, GET {{backend.endpoint}}/parties/${header.idType}/${header.idValue}')")
 				.toD("{{backend.endpoint}}/parties/${header.idType}/${header.idValue}?bridgeEndpoint=true&throwExceptionOnFailure=false")
 				.unmarshal().json(JsonLibrary.Gson)
+
+				// Add CORS headers
+				.process(corsFilter)
+
 				.to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
 						"'Response from backend API, getParties: ${body}', " +
 						"'Tracking the response', 'Verify the response', null)")
