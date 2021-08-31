@@ -132,7 +132,7 @@ public class SendMoneyRouter extends RouteBuilder {
                         "'Tracking the request', 'Track the response', " +
                         "'Request sent to PUT {{outbound.endpoint}}/transfers/${header.transferId}')")
 //                .marshal().json()
-                .toD("{{outbound.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true" + simple("$body"))
+                .toD("{{outbound.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true")
                 .unmarshal().json()
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from outbound API, putTransfersById: ${body}', " +
