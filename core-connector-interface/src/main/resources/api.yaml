@@ -8,7 +8,7 @@ info:
   license:
     name: Apache License Version 2.0, January 2004
     url: http://www.apache.org/licenses/
-  version: 1.4.0
+  version: 1.4.2
 
 
 paths:
@@ -105,6 +105,31 @@ paths:
       parameters:
         - $ref: '#/components/parameters/idType'
         - $ref: '#/components/parameters/idValue'
+      responses:
+        200:
+          description: Response containing details of the requested party
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/transferPartyInbound'
+        400:
+          $ref: '#/components/responses/400'
+        404:
+          $ref: '#/components/responses/404'
+        500:
+          $ref: '#/components/responses/500'
+
+  /parties/{idType}/{idValue}/{idSubValue}:
+    get:
+      summary: Requests information relating to a transfer party identified by the specified identifier type and value as well as sub identifier
+      operationId: getPartiesByIdTypeIdValueIdSubValue
+      description: The HTTP request `GET /parties/{idType}/{idValue}/{idSubValue}` is sent to the Payee DFSP, and it is used to look up information regarding the requested transfer party, identified by `{idType}` and `{idValue}` and {`idSubValue`}.
+      tags:
+        - parties
+      parameters:
+        - $ref: '#/components/parameters/idType'
+        - $ref: '#/components/parameters/idValue'
+        - $ref: '#/components/parameters/idSubValue'
       responses:
         200:
           description: Response containing details of the requested party
@@ -600,6 +625,68 @@ components:
       required:
         - latitude
         - longitude
+
+    amountCurrency:
+      type: object
+      description: Object containing Amount and Currency of the transfer.
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          $ref: '#/components/schemas/money'
+        currency:
+          $ref: '#/components/schemas/currency'
+
+    scenario:
+      type: string
+      enum:
+        - TRANSFER
+
+    transactionTypeObject:
+      type: object
+      description: Object containing transfer object.
+      required:
+        - scenario
+        - initiator
+        - initiatorType
+      properties:
+        scenario:
+          $ref: '#/components/schemas/scenario'
+        initiator:
+          $ref: '#/components/schemas/initiator'
+        initiatorType:
+          $ref: '#/components/schemas/initiatorType'
+          description: Specifies the type of the transaction initiator.
+
+    ilpPacketData:
+      type: object
+      description: Object containing transfer object.
+      required:
+        - quoteId
+        - transactionId
+        - payer
+        - payee
+        - amount
+        - transactionType
+      properties:
+        quoteId:
+          $ref: '#/components/schemas/quoteId'
+        transactionId:
+          $ref: '#/components/schemas/transactionId'
+          description: Identifier for the transaction, decided by the Payer FSP during the creation of the quote.
+        payer:
+          $ref: '#/components/schemas/transferParty'
+          description: Information about the Payer in the proposed financial transaction.
+        payee:
+          $ref: '#/components/schemas/transferParty'
+          description: Information about the Payee in the proposed financial transaction.
+        amount:
+          $ref: '#/components/schemas/amountCurrency'
+          description: Amount and currency of the transaction
+        transactionType:
+          $ref: '#/components/schemas/transactionTypeObject'
+          description: Information about type of transaction and initiator.
 
     homeTransactionId:
       type: string
@@ -1316,6 +1403,7 @@ components:
         - currency
         - amount
         - transactionType
+        # - ilpPacket
       properties:
         transferId:
           $ref: '#/components/schemas/transferId'
@@ -1333,6 +1421,13 @@ components:
           $ref: '#/components/schemas/money'
         transactionType:
           $ref: '#/components/schemas/transactionType'
+        ilpPacket:
+          type: object
+          required:
+            - data
+          properties:
+            data:
+              $ref: '#/components/schemas/ilpPacketData'
         note:
           maxLength: 128
           type: string
@@ -1481,6 +1576,17 @@ components:
         minLength: 1
         maxLength: 128
       description: Identifier of the party.
+
+    idSubValue:
+      name: idSubValue
+      in: path
+      required: true
+      schema:
+        type: string
+        minLength: 1
+        maxLength: 128
+      description: Sub identifier of the party.
+
     transferId:
       name: transferId
       in: path

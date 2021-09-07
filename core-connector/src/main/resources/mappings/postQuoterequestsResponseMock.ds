@@ -2,5 +2,11 @@
   "quoteId": payload.quoteId,
   "transactionId": payload.transactionId,
   "transferAmount": payload.amount,
-  "transferAmountCurrency": payload.currency
+  "transferAmountCurrency": payload.currency,
+  "payeeFspFeeAmount": "0",
+  "payeeFspFeeAmountCurrency": payload.currency,
+  "payeeFspCommissionAmount": "0",
+  "payeeFspCommissionAmountCurrency": payload.currency,
+  [if (std.objectHas(payload, "expiration") && payload.expiration != null)
+   then "expiration"]: payload.expiration
 }
