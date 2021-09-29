@@ -31,7 +31,8 @@ public class CustomErrorProcessor implements Processor {
             if (exception instanceof HttpOperationFailedException) {
                 HttpOperationFailedException e = (HttpOperationFailedException) exception;
                 httpResponseCode = e.getStatusCode();
-                String errorDescription = "Downstream API failed.";
+                String errorMessage = "Downstream API failed.";
+                String detailedDescription = "Unknown";
                 try {
                     if (null != e.getResponseBody()) {
                         /* Below if block needs to be changed as per the error object structure specific to 
@@ -42,12 +43,16 @@ public class CustomErrorProcessor implements Processor {
 //                            errorDescription = respObject.getString("returnStatus");
                             statusCode = String.valueOf(respObject.getInt("statusCode"));
 //                            statusCode = respObject.getString("statusCode");
-                            errorDescription = respObject.getString("message");
+                            detailedDescription = respObject.getString("message");
+                            errorMessage = respObject.getJSONObject("transferState").getJSONObject("lastError").getJSONObject("mojaloopError").getJSONObject("errorInformation").getString("errorDescription");
                         }
                     }
                 } finally {
-                    reasonText = "{ \"statusCode\": \"" + statusCode + "\"," +
-                            "\"message\": \"" + errorDescription + "\"} ";
+                    reasonText = "{" +
+                            "\"statusCode\": \"" + statusCode + "\"," +
+                            "\"message\": \"" + errorMessage + "\"," +
+                            "\"detailedDescription\": \"" + detailedDescription +
+                            "\"} ";
                 }
             }
             customJsonMessage.logJsonMessage("error", String.valueOf(exchange.getIn().getHeader("X-CorrelationId")),

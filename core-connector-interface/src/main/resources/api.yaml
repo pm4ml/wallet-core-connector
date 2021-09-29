@@ -8,7 +8,7 @@ info:
   license:
     name: Apache License Version 2.0, January 2004
     url: http://www.apache.org/licenses/
-  version: 1.4.2
+  version: 1.7.1
 
 
 paths:
@@ -121,9 +121,9 @@ paths:
 
   /parties/{idType}/{idValue}/{idSubValue}:
     get:
-      summary: Requests information relating to a transfer party identified by the specified identifier type and value as well as sub identifier
+      summary: Requests information relating to a transfer party identified by the specified identifier type and value, as well as a sub-identifier
       operationId: getPartiesByIdTypeIdValueIdSubValue
-      description: The HTTP request `GET /parties/{idType}/{idValue}/{idSubValue}` is sent to the Payee DFSP, and it is used to look up information regarding the requested transfer party, identified by `{idType}` and `{idValue}` and {`idSubValue`}.
+      description: The HTTP request `GET /parties/{idType}/{idValue}/{idSubValue}` is sent to the Payee DFSP, and it is used to look up information regarding the requested transfer party, identified by `{idType}`, `{idValue}`, and {`idSubValue`}.
       tags:
         - parties
       parameters:
@@ -222,6 +222,18 @@ paths:
 
 components:
   schemas:
+
+    amountCurrency:
+      type: object
+      description: Object containing Amount and Currency of the transfer.
+      required:
+        - amount
+        - currency
+      properties:
+        amount:
+          $ref: '#/components/schemas/money'
+        currency:
+          $ref: '#/components/schemas/currency'
 
     amountType:
       type: string
@@ -552,7 +564,7 @@ components:
                 expiration:
                   $ref: '#/components/schemas/timestamp'
                 extensionList:
-                  $ref: '#/components/schemas/extensionList'
+                  $ref: '#/components/schemas/extensionListComplex'
               required:
                 - amount
             headers:
@@ -573,7 +585,7 @@ components:
         #                fulfilment:
         #                  $ref: '#/components/schemas/ilpFulfilment'
         #                extensionList:
-        #                  $ref: '#/components/schemas/extensionList'
+        #                  $ref: '#/components/schemas/extensionListComplex'
         quote:
           type: object
           properties:
@@ -626,72 +638,16 @@ components:
         - latitude
         - longitude
 
-    amountCurrency:
-      type: object
-      description: Object containing Amount and Currency of the transfer.
-      required:
-        - amount
-        - currency
-      properties:
-        amount:
-          $ref: '#/components/schemas/money'
-        currency:
-          $ref: '#/components/schemas/currency'
-
-    scenario:
-      type: string
-      enum:
-        - TRANSFER
-
-    transactionTypeObject:
-      type: object
-      description: Object containing transfer object.
-      required:
-        - scenario
-        - initiator
-        - initiatorType
-      properties:
-        scenario:
-          $ref: '#/components/schemas/scenario'
-        initiator:
-          $ref: '#/components/schemas/initiator'
-        initiatorType:
-          $ref: '#/components/schemas/initiatorType'
-          description: Specifies the type of the transaction initiator.
-
-    ilpPacketData:
-      type: object
-      description: Object containing transfer object.
-      required:
-        - quoteId
-        - transactionId
-        - payer
-        - payee
-        - amount
-        - transactionType
-      properties:
-        quoteId:
-          $ref: '#/components/schemas/quoteId'
-        transactionId:
-          $ref: '#/components/schemas/transactionId'
-          description: Identifier for the transaction, decided by the Payer FSP during the creation of the quote.
-        payer:
-          $ref: '#/components/schemas/transferParty'
-          description: Information about the Payer in the proposed financial transaction.
-        payee:
-          $ref: '#/components/schemas/transferParty'
-          description: Information about the Payee in the proposed financial transaction.
-        amount:
-          $ref: '#/components/schemas/amountCurrency'
-          description: Amount and currency of the transaction
-        transactionType:
-          $ref: '#/components/schemas/transactionTypeObject'
-          description: Information about type of transaction and initiator.
-
     homeTransactionId:
       type: string
       maxLength: 255
       description: Transaction ID from the DFSP backend, used to reconcile transactions between the Switch and DFSP backend systems.
+
+    idSubValue:
+      type: string
+      minLength: 1
+      maxLength: 128
+      description: Either a sub-identifier of an `{idValue}`, or a sub-type of the `{idType}`, normally a `{personalIdType}`, for example a phone number associated with an account
 
     idType:
       type: string
@@ -709,12 +665,6 @@ components:
       minLength: 4
       maxLength: 125
       description: Identifier of the party.
-
-    idSubValue:
-      type: string
-      minLength: 1
-      maxLength: 128
-      description: Either a sub-identifier of a `{idValue}`, or a sub-type of the `{idType}`, normally a `{personalIdType}`, for example a phone number associated with an account
 
     ilpCondition:
       type: string
@@ -734,6 +684,35 @@ components:
       minLength: 1
       maxLength: 32768
       description: Information for recipient (transport layer information).
+
+    ilpPacketData:
+      type: object
+      description: Object containing transfer object.
+      required:
+        - quoteId
+        - transactionId
+        - payer
+        - payee
+        - amount
+        - transactionType
+      properties:
+        quoteId:
+          $ref: '#/components/schemas/quoteId'
+        transactionId:
+          $ref: '#/components/schemas/transactionId'
+          description: Identifier for the transaction, decided by the Payer FSP during the creation of the quote.
+        payer:
+          $ref: '#/components/schemas/Party'
+          description: Information about the Payer in the proposed financial transaction.
+        payee:
+          $ref: '#/components/schemas/Party'
+          description: Information about the Payee in the proposed financial transaction.
+        amount:
+          $ref: '#/components/schemas/amountCurrency'
+          description: Amount and currency of the transaction
+        transactionType:
+          $ref: '#/components/schemas/transactionTypeObject'
+          description: Information about type of transaction and initiator.
 
     initiator:
       type: string
@@ -833,7 +812,7 @@ components:
           maxLength: 128
           description: An optional note associated with the requested transfer.
         extensionList:
-          $ref: '#/components/schemas/extensionList'
+          $ref: '#/components/schemas/extensionListComplex'
           description: Optional extension, specific to deployment.
       required:
         - quoteId
@@ -864,7 +843,7 @@ components:
         geoCode:
           $ref: '#/components/schemas/geoCode'
         extensionList:
-          $ref: '#/components/schemas/extensionList'
+          $ref: '#/components/schemas/extensionListComplex'
       required:
         - transferAmount
         - expiration
@@ -966,7 +945,7 @@ components:
           $ref: '#/components/schemas/fspId'
           description: FSP ID (if known).
         extensionList:
-          $ref: '#/components/schemas/extensionList'
+          $ref: '#/components/schemas/extensionListComplex'
           description: Optional extension, specific to deployment.
       required:
         - partyIdType
@@ -1162,6 +1141,11 @@ components:
           $ref: '#/components/schemas/extensionList'
           description: Optional extension, specific to deployment.
 
+    scenario:
+      type: string
+      enum:
+        - TRANSFER
+
     timestamp:
       type: string
       pattern: ^(?:[1-9]\d{3}-(?:(?:0[1-9]|1[0-2])-(?:0[1-9]|1\d|2[0-8])|(?:0[13-9]|1[0-2])-(?:29|30)|(?:0[13578]|1[02])-31)|(?:[1-9]\d(?:0[48]|[2468][048]|[13579][26])|(?:[2468][048]|[13579][26])00)-02-29)T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:(\.\d{3}))(?:Z|[+-][01]\d:[0-5]\d)$
@@ -1200,6 +1184,22 @@ components:
         - LOAN_REPAYMENT - Used in the loan repayment use case when the loan repayment goes to a loan account.
         - SAVINGS_DEPOSIT - Used in the loan repayment use case when the loan repayment goes to a savings account.
         - TRANSFER - Used in the loan disbursement use case.
+
+    transactionTypeObject:
+      type: object
+      description: Object containing transfer object.
+      required:
+        - scenario
+        - initiator
+        - initiatorType
+      properties:
+        scenario:
+          $ref: '#/components/schemas/scenario'
+        initiator:
+          $ref: '#/components/schemas/initiator'
+        initiatorType:
+          $ref: '#/components/schemas/initiatorType'
+          description: Specifies the type of the transaction initiator.
 
     # transferContinuationAcceptParty:
     #   type: object
@@ -1435,7 +1435,6 @@ components:
     transferResponse:
       type: object
       required:
-        - homeTransactionId
         - from
         - to
         - amountType
@@ -1451,6 +1450,11 @@ components:
           $ref: '#/components/schemas/transferParty'
         to:
           $ref: '#/components/schemas/transferParty'
+        #          oneOf:
+        #            - $ref: '#/components/schemas/transferParty'
+        #            - type: array
+        #              items:
+        #                $ref: '#/components/schemas/transferParty'
         amountType:
           $ref: '#/components/schemas/amountType'
         currency:
@@ -1464,17 +1468,111 @@ components:
           type: string
         currentState:
           $ref: '#/components/schemas/transferStatus'
+        quoteRequestExtensions:
+          $ref: '#/components/schemas/extensionList'
+        transferRequestExtensions:
+          $ref: '#/components/schemas/extensionList'
+        initiatedTimestamp:
+          $ref: '#/components/schemas/timestamp'
+        direction:
+          type: string
+          enum:
+            - OUTBOUND
+        getPartiesRequest:
+          type: object
+          properties:
+            method:
+              type: string
+            host:
+              type: string
+            port:
+              type: string
+            path:
+              type: string
+            headers:
+              type: object
+            agent:
+              type: string
+            body:
+              type: object
+        getPartiesResponse:
+          type: object
+          required:
+            - body
+          properties:
+            body:
+              type: object
+            headers:
+              type: object
+        acceptParty:
+          type: boolean
+          enum:
+            - true
+            - false
         quoteId:
           $ref: '#/components/schemas/mojaloopIdentifier'
+        quoteRequest:
+          type: object
+          properties:
+            method:
+              type: string
+            host:
+              type: string
+            port:
+              type: string
+            path:
+              type: string
+            headers:
+              type: object
+            agent:
+              type: string
+            body:
+              type: string
         quoteResponse:
-          $ref: '#/components/schemas/quote'
+          type: object
+          required:
+            - body
+          properties:
+            body:
+              $ref: '#/components/schemas/quote'
+            headers:
+              type: object
         quoteResponseSource:
           $ref: '#/components/schemas/fspId'
           description: >
             FSPID of the entity that supplied the quote response. This may not be the same as the FSPID of the entity which
             owns the end user account in the case of a foreign exchange (FOREX) transfer, i.e., it may be a FOREX gateway.
+        acceptQuote:
+          type: boolean
+          enum:
+            - true
+            - false
+        prepare:
+          type: object
+          properties:
+            method:
+              type: string
+            host:
+              type: string
+            port:
+              type: string
+            path:
+              type: string
+            headers:
+              type: object
+            agent:
+              type: string
+            body:
+              type: string
         fulfil:
-          $ref: '#/components/schemas/transferFulfilment'
+          type: object
+          required:
+            - body
+          properties:
+            body:
+              $ref: '#/components/schemas/transferFulfilment'
+            headers:
+              type: object
         lastError:
           description: >
             Object representing the last error to occur during a transfer process. This may be a Mojaloop API error returned from another entity in the scheme
@@ -1483,7 +1581,7 @@ components:
 
     transferResponseInbound:
       type: object
-      #required:
+        #required:
       #- homeTransactionId
       properties:
         homeTransactionId:
