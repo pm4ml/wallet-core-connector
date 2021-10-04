@@ -52,7 +52,7 @@ public class CustomErrorProcessor implements Processor {
                             "\"statusCode\": \"" + statusCode + "\"," +
                             "\"message\": \"" + errorMessage + "\"" +
 //                            "\"detailedDescription\": \"" + detailedDescription +
-                            "\"} ";
+                            "}";
                 }
             }
             customJsonMessage.logJsonMessage("error", String.valueOf(exchange.getIn().getHeader("X-CorrelationId")),
