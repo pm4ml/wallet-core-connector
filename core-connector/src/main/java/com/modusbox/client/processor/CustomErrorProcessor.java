@@ -50,8 +50,8 @@ public class CustomErrorProcessor implements Processor {
                 } finally {
                     reasonText = "{" +
                             "\"statusCode\": \"" + statusCode + "\"," +
-                            "\"message\": \"" + errorMessage + "\"," +
-                            "\"detailedDescription\": \"" + detailedDescription +
+                            "\"message\": \"" + errorMessage + "\"" +
+//                            "\"detailedDescription\": \"" + detailedDescription +
                             "\"} ";
                 }
             }
