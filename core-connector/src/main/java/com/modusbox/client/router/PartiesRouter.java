@@ -1,12 +1,15 @@
 package com.modusbox.client.router;
 
+import com.modusbox.client.customexception.CCCustomException;
 import com.modusbox.client.exception.RouteExceptionHandlingConfigurer;
 import com.modusbox.client.processor.CorsFilter;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Histogram;
 import org.apache.camel.Exchange;
 import org.apache.camel.builder.RouteBuilder;
+import org.apache.camel.http.base.HttpOperationFailedException;
 import org.apache.camel.model.dataformat.JsonLibrary;
+import org.json.JSONException;
 
 public class PartiesRouter extends RouteBuilder {
 
@@ -60,7 +63,10 @@ public class PartiesRouter extends RouteBuilder {
 				/*
 				 * BEGIN processing
 				 */
+				.process(exchange -> System.out.println())
+
 				.setBody(simple("{}"))
+				.process(exchange -> System.out.println())
 				.removeHeaders("CamelHttp*")
 				.removeHeader(Exchange.HTTP_URI)
 				.setHeader("Content-Type", constant("application/json"))
@@ -71,8 +77,15 @@ public class PartiesRouter extends RouteBuilder {
 						"'Tracking the request', 'Track the response', " +
 						"'Request sent to, GET {{backend.endpoint}}/parties/${header.idType}/${header.idValue}')")
 				.toD("{{backend.endpoint}}/parties/${header.idType}/${header.idValue}?bridgeEndpoint=true&throwExceptionOnFailure=false")
-				.unmarshal().json(JsonLibrary.Gson)
 
+				.unmarshal().json()
+//.process(exchange -> System.out.println())
+				.choice()
+				.when(simple("${body['code']} != 200"))
+				.to("direct:catchCBSError")
+				.endDoTry()
+//.process(exchange -> System.out.println())
+				.marshal().json()
 				// Add CORS headers
 				.process(corsFilter)
 
@@ -84,6 +97,8 @@ public class PartiesRouter extends RouteBuilder {
 				 */
 				.to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
 						"'Send response, " + ROUTE_ID + "', null, null, 'Output Payload: ${body}')") // default logging
+				.doCatch(CCCustomException.class, HttpOperationFailedException.class, JSONException.class)
+				.to("direct:extractCustomErrors")
 				.doFinally().process(exchange -> {
 			((Histogram.Timer) exchange.getProperty(TIMER_NAME)).observeDuration(); // stop Prometheus Histogram metric
 		}).end()
@@ -99,7 +114,10 @@ public class PartiesRouter extends RouteBuilder {
 				/*
 				 * BEGIN processing
 				 */
+				.process(exchange -> System.out.println())
+
 				.setBody(simple("{}"))
+				.process(exchange -> System.out.println())
 				.removeHeaders("CamelHttp*")
 				.removeHeader(Exchange.HTTP_URI)
 				.setHeader("Content-Type", constant("application/json"))
@@ -110,7 +128,15 @@ public class PartiesRouter extends RouteBuilder {
 						"'Tracking the request', 'Track the response', " +
 						"'Request sent to, GET {{backend.endpoint}}/parties/${header.idType}/${header.idValue}/${header.idSubValue}')")
 				.toD("{{backend.endpoint}}/parties/${header.idType}/${header.idValue}/${header.idSubValue}?bridgeEndpoint=true&throwExceptionOnFailure=false")
-				.unmarshal().json(JsonLibrary.Gson)
+
+				.unmarshal().json()
+//.process(exchange -> System.out.println())
+				.choice()
+				.when(simple("${body['code']} != 200"))
+				.to("direct:catchCBSError")
+				.endDoTry()
+//.process(exchange -> System.out.println())
+				.marshal().json()
 
 				// Add CORS headers
 				.process(corsFilter)
@@ -123,6 +149,8 @@ public class PartiesRouter extends RouteBuilder {
 				 */
 				.to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
 						"'Send response, " + ROUTE_ID_SUB + "', null, null, 'Output Payload: ${body}')") // default logging
+				.doCatch(CCCustomException.class, HttpOperationFailedException.class, JSONException.class)
+				    .to("direct:extractCustomErrors")
 				.doFinally().process(exchange -> {
 			((Histogram.Timer) exchange.getProperty(TIMER_NAME_SUB)).observeDuration(); // stop Prometheus Histogram metric
 		}).end()
