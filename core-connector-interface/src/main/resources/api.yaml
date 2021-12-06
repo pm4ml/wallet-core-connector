@@ -8,7 +8,7 @@ info:
   license:
     name: Apache License Version 2.0, January 2004
     url: http://www.apache.org/licenses/
-  version: 1.7.1
+  version: 1.8.1
 
 
 paths:
@@ -1091,6 +1091,9 @@ components:
         expiration:
           $ref: '#/components/schemas/timestamp'
           description: An optional deadline for responding to the quote request.
+        extensionList:
+          $ref: '#/components/schemas/extensionList'
+          description: Optional extension, specific to deployment.
 
     quoteResponse:
       type: object
@@ -1431,6 +1434,9 @@ components:
         note:
           maxLength: 128
           type: string
+        extensionList:
+          $ref: '#/components/schemas/extensionList'
+          description: Optional extension, specific to deployment.
 
     transferResponse:
       type: object
@@ -1581,7 +1587,7 @@ components:
 
     transferResponseInbound:
       type: object
-        #required:
+      #required:
       #- homeTransactionId
       properties:
         homeTransactionId:

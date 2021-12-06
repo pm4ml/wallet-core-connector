@@ -8,5 +8,7 @@
   "payeeFspCommissionAmount": "0",
   "payeeFspCommissionAmountCurrency": payload.currency,
   [if (std.objectHas(payload, "expiration") && payload.expiration != null)
-   then "expiration"]: payload.expiration
+   then "expiration"]: payload.expiration,
+  [if (std.objectHas(payload, "extensionList") && (payload.extensionList != null) && (payload.extensionList != []))
+   then "extensionList"]: payload.extensionList
 }

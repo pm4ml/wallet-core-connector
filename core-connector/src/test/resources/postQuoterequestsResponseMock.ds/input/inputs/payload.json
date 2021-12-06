@@ -52,5 +52,43 @@
     "longitude": "string"
   },
   "note": "string",
-  "expiration": "string"
+  "expiration": "string",
+  "extensionList": [
+  {
+    "key":"MSGID",
+    "value":"7e2599df-80a1-4f6e-b381-99536c4d2691"
+  },
+  {
+    "key":"CREDT",
+    "value":"2021-02-10T15:07:38.6875000+03:00"
+  },
+  {
+    "key":"INSTRID",
+    "value":"8c5d9f95"
+  },
+  {
+    "key":"ENDTOENDID",
+    "value":"0120a604-aa80-43da-b6f6-c1d5f8aa622e"
+  },
+  {
+    "key":"TXID",
+    "value":"acd1ef76"
+  },
+  {
+    "key":"SETTLEDATE",
+    "value":"2021-07-13"
+  },
+  {
+    "key":"USTRD",
+    "value":"d7d91837-4402-4c8f-9b73-20255b0ec40c"
+  },
+  {
+    "key":"REFDOC",
+    "value":"hsuikdfgdgg"
+  },
+  {
+    "key":"DOCDATE",
+    "value":"2021-07-13"
+  }
+]
 }
