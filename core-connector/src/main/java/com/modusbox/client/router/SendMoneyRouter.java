@@ -156,7 +156,7 @@ public class SendMoneyRouter extends RouteBuilder {
 
                 // Conditional whether errorMessage was found
                 .choice()
-                    .when(simple("${body.get('statusCode')} == '3241'"))
+                    .when(simple("${body.get('statusCode')} == '3242'"))
                         .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(409))
                 .end()
         ;
