@@ -11,6 +11,6 @@ To run the project using Docker: docker run -p 3001:3001 -p 8080:8080 -t wallet-
 
 To run the Integration Tests (run mvn clean install under core-connector folder first): mvn -P docker-it clean install
 
-Architecture diagram:
+Architecture diagram: 
 
 ![Alt text](diagram.jpg?raw=true "Integration Architecture")
