@@ -80,9 +80,9 @@ public class TransfersRouter extends RouteBuilder {
                 .setHeader(Exchange.HTTP_METHOD, constant("GET"))
 
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-                        "'Calling Hub API, get transfers, GET {{ml-conn.outbound.host}}', " +
+                        "'Calling Hub API, get transfers, GET {{outbound.endpoint}}', " +
                         "'Tracking the request', 'Track the response', 'Input Payload: ${body}')")
-                .toD("{{ml-conn.outbound.host}}/transfers/${header.transferId}?bridgeEndpoint=true&throwExceptionOnFailure=false")
+                .toD("{{outbound.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true&throwExceptionOnFailure=false")
                 .unmarshal().json(JsonLibrary.Gson)
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from Hub API, get transfers: ${body}', " +
