@@ -2,6 +2,7 @@ package com.modusbox.client.router;
 
 import com.modusbox.client.exception.RouteExceptionHandlingConfigurer;
 import com.modusbox.client.processor.CorsFilter;
+import com.modusbox.client.processor.SetErrorMessagesForInactiveLoans;
 import io.prometheus.client.Counter;
 import io.prometheus.client.Histogram;
 import org.apache.camel.Exchange;
@@ -33,6 +34,7 @@ public class SendMoneyRouter extends RouteBuilder {
 
     private final RouteExceptionHandlingConfigurer exceptionHandlingConfigurer = new RouteExceptionHandlingConfigurer();
     private final CorsFilter corsFilter = new CorsFilter();
+    private final SetErrorMessagesForInactiveLoans setErrorMessagesForInactiveLoans = new SetErrorMessagesForInactiveLoans();
 
     public void configure() {
         // Add our global exception handling strategy
@@ -50,6 +52,7 @@ public class SendMoneyRouter extends RouteBuilder {
             .removeHeaders("CamelHttp*")
             .setHeader(Exchange.HTTP_METHOD, constant("POST"))
             .setHeader("Content-Type", constant("application/json"))
+            .setProperty("locale", constant("{{dfsp.locale}}"))
 
             // Prune empty items from the request
             .marshal().json()
@@ -89,6 +92,7 @@ public class SendMoneyRouter extends RouteBuilder {
                 .removeHeaders("CamelHttp*")
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
+                .setProperty("locale", constant("{{dfsp.locale}}"))
 
                 .marshal().json()
                 .transform(datasonnet("resource:classpath:mappings/putTransfersAcceptPartyRequest.ds"))
@@ -120,6 +124,7 @@ public class SendMoneyRouter extends RouteBuilder {
                 .removeHeaders("CamelHttp*")
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
+                .setProperty("locale", constant("{{dfsp.locale}}"))
 
                 // Will convert to JSON and only take the accept quote section
                 .marshal().json()
@@ -158,6 +163,13 @@ public class SendMoneyRouter extends RouteBuilder {
                 .choice()
                     .when(simple("${body.get('statusCode')} == '3242'"))
                         .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(409))
+                        .marshal().json()
+                        .process(setErrorMessagesForInactiveLoans)
+
+                        .transform(datasonnet("resource:classpath:mappings/getInactiveAccountError.ds"))
+                        .setBody(simple("${body.content}"))
+
+                        .log("frinedlyMessage: ${exchangeProperty.friendlyErrorMessage}")
                 .end()
         ;
     }
