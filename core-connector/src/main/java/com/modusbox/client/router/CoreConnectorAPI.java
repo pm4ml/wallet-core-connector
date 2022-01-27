@@ -27,6 +27,8 @@ public final class CoreConnectorAPI extends RouteBuilder {
                 //.retryAttemptedLogLevel(LoggingLevel.INFO).retriesExhaustedLogLevel(LoggingLevel.INFO)
                 //.maximumRedeliveries(3).redeliveryDelay(250).backOffMultiplier(2).useExponentialBackOff()
 
+                .setProperty("locale", constant("{{dfsp.locale}}"))
+
                 .handled(true)
                 .log("-- processing error")
                 .process(errorProcessor)

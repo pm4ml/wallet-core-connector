@@ -1,5 +1,6 @@
 package com.modusbox.client.processor;
 
+import com.google.common.base.CharMatcher;
 import com.modusbox.client.customexception.CCCustomException;
 import com.modusbox.client.enums.ErrorCode;
 import com.modusbox.log4j2.message.CustomJsonMessage;
@@ -23,12 +24,17 @@ public class CustomErrorProcessor implements Processor {
     @Override
     public void process(Exchange exchange) throws Exception {
 
-        String reasonText = "{ \"statusCode\": \"5000\"," +
-                "\"message\": \"Unknown\" }";
+        String reasonText = "{ \"statusCode\": \"5000\",\"message\": \"Unknown\",\"localeMessage\": \"Unknown\",\"detailedDescription\": \"Unknown\" }";
         String statusCode = "5000";
         String errorMessage = "Downstream API failed.";
+        String errorMessageLocale = "Unknown";
         String detailedDescription = "Unknown";
         int httpResponseCode = 500;
+
+        String jsonObjectMessage;
+        String originErrorMsg;
+        boolean isCCCustomException = false;
+        String locale = (String) exchange.getProperty("locale");
 
         JSONObject errorResponse = new JSONObject(ErrorCode.getErrorResponse(ErrorCode.GENERIC_DOWNSTREAM_ERROR_PAYEE));;
 
@@ -52,7 +58,7 @@ public class CustomErrorProcessor implements Processor {
                                 e.getResponseBody());
 
                         JSONObject respObject = new JSONObject(e.getResponseBody());
-                        if (respObject.has("message")) {
+                        if (respObject.has("message")  && respObject.has("statusCode")) {
 //                            statusCode = String.valueOf(respObject.getInt("returnCode"));
 //                            errorDescription = respObject.getString("returnStatus");
                             statusCode = String.valueOf(respObject.getInt("statusCode"));
@@ -60,7 +66,45 @@ public class CustomErrorProcessor implements Processor {
                             // Replace 2 or more whitespace chars with just one
                             detailedDescription = respObject.getString("message").replaceAll("\\s+", " ");
                             try {
-                                errorMessage = respObject.getJSONObject("transferState").getJSONObject("lastError").getJSONObject("mojaloopError").getJSONObject("errorInformation").getString("errorDescription");
+                                //checking gateway timeout
+                                if(statusCode.equals("504"))
+                                {
+                                    statusCode = "2004";
+                                    originErrorMsg = String.valueOf(respObject.getJSONObject("transferState"));
+                                }
+                                else if(statusCode.equals("400"))
+                                {
+                                    statusCode="3100";
+                                    originErrorMsg = String.valueOf(respObject);
+                                }
+                                else
+                                {
+                                    originErrorMsg = respObject.getJSONObject("transferState").getJSONObject("lastError").getJSONObject("mojaloopError").getJSONObject("errorInformation").getString("errorDescription");
+                                }
+                                jsonObjectMessage  = ErrorCode.getMojaloopErrorResponseByStatusCode(statusCode, locale);
+                                errorResponse      = new JSONObject(jsonObjectMessage).getJSONObject("errorInformation");
+                                errorMessage       = errorResponse.getString("description");
+                                errorMessageLocale = errorResponse.getString("descriptionLocale");
+                                if (!statusCode.equals(String.valueOf(errorResponse.getInt("statusCode")))) {
+                                    statusCode = String.valueOf(errorResponse.getInt("statusCode"));
+                                }
+
+                                //Update Rounding Value Error Message
+                                if(statusCode.equals("5241")){
+                                    String lastWord = originErrorMsg.substring(originErrorMsg.lastIndexOf(" ")+1);
+                                    lastWord = CharMatcher.is('.').trimTrailingFrom(lastWord);
+
+                                    if (lastWord.length() > 0 && lastWord.matches("[0-9]+"))
+                                    {
+                                        System.out.println("Rounding Value: " + lastWord) ;
+                                        errorMessage = errorMessage.replaceAll("XXXX", lastWord);
+                                        errorMessageLocale = errorMessageLocale.replaceAll("XXXX", lastWord);
+                                    }
+                                    else {
+                                        System.out.println("There are not all digits in Rounding Value.");
+                                    }
+
+                                }
                             } catch (JSONException ex) {
 //                                ex.printStackTrace();
                                 errorMessage = "Unknown - no mojaloopError message present";
@@ -71,13 +115,15 @@ public class CustomErrorProcessor implements Processor {
                     reasonText = "{" +
                             "\"statusCode\": \"" + statusCode + "\"," +
                             "\"message\": \"" + errorMessage + "\"," +
-                            "\"detailedDescription\": \"" + detailedDescription + "\"" +
+                            "\"localeMessage\": \"" + errorMessageLocale + "\"," +
+                            "\"detailedDescription\": \"" + detailedDescription + "\""+
                             "}";
                 }
             } else {
                 try {
                     if (exception instanceof CCCustomException) {
                         errorResponse = new JSONObject(exception.getMessage());
+                        isCCCustomException = true;
                     } else if (exception instanceof InternalServerErrorException) {
                         errorResponse = new JSONObject(ErrorCode.getErrorResponse(ErrorCode.INTERNAL_SERVER_ERROR));
                     } else if (exception instanceof ConnectTimeoutException || exception instanceof SocketTimeoutException) {
@@ -88,10 +134,25 @@ public class CustomErrorProcessor implements Processor {
                 } finally {
                     httpResponseCode = errorResponse.getInt("errorCode");
                     errorResponse = errorResponse.getJSONObject("errorInformation");
+                    detailedDescription = String.valueOf(errorResponse);
                     statusCode = String.valueOf(errorResponse.getInt("statusCode"));
-                    errorMessage = errorResponse.getString("description");
-                    reasonText = "{ \"statusCode\": \"" + statusCode + "\"," +
-                            "\"message\": \"" + errorMessage + "\"} ";
+
+                    if (!isCCCustomException) {
+                        jsonObjectMessage  = ErrorCode.getMojaloopErrorResponseByStatusCode(statusCode, locale);
+                        errorResponse      = new JSONObject(jsonObjectMessage).getJSONObject("errorInformation");
+                        errorMessage       = errorResponse.getString("description");
+                        errorMessageLocale = errorResponse.getString("descriptionLocale");
+                    }
+                    else {
+                        errorMessage       = errorResponse.getString("description");
+                        errorMessageLocale = errorMessage;
+                    }
+                    reasonText = "{" +
+                            "\"statusCode\": \"" + statusCode + "\"," +
+                            "\"message\": \"" + errorMessage + "\"," +
+                            "\"localeMessage\": \"" + errorMessageLocale + "\"," +
+                            "\"detailedDescription\": " + detailedDescription +
+                            "}";
                 }
             }
             customJsonMessage.logJsonMessage("error", String.valueOf(exchange.getIn().getHeader("X-CorrelationId")),
