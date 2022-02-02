@@ -1640,7 +1640,7 @@ components:
         
     transferStatusResponse:
       type: object
-	    properties:	
+      properties:	
         transferId:	
           $ref: '#/components/schemas/mojaloopIdentifier'	
         transferState:	
