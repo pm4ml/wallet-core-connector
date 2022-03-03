@@ -125,23 +125,48 @@ public class SendMoneyRouter extends RouteBuilder {
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
                 .setProperty("locale", constant("{{dfsp.locale}}"))
+                .log("Locale in Router: {{dfsp.locale}}")
+
+//                .process(exchange -> System.out.println())                
 
                 // Will convert to JSON and only take the accept quote section
+                .marshal().json()
+                .transform(datasonnet("resource:classpath:mappings/retrieveAcceptPartyAndQuote.ds"))	
+                .setBody(simple("${body.content}"))	
+//                .process(exchange -> System.out.println())	
+                .choice()	
+                .when(simple("${body['acceptParty']} == false"))	
+//               .process(exchange -> System.out.println())	
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +	
+                        "'Payer did not confirm payee for transfer id: ${header.transferId}', " +	
+                        "null, null, null)")	
+                .when(simple("${body['acceptQuote']} == false"))	
+//                .process(exchange -> System.out.println())
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +	
+                        "'Payer did not confirm quote for transfer id: ${header.transferId}', " +	
+                        "null, null, null)")	
+                .otherwise()	
+                .marshal().json()	
+//                .process(exchange -> System.out.println())
+                .setBody(exchangeProperty("origPayload"))	
                 .marshal().json()
                 .transform(datasonnet("resource:classpath:mappings/putTransfersAcceptQuoteRequest.ds"))
                 .setBody(simple("${body.content}"))
                 .marshal().json()
 
+//                .process(exchange -> System.out.println())
+
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Calling outbound API, putTransfersById', " +
                         "'Tracking the request', 'Track the response', " +
-                        "'Request sent to PUT {{outbound.endpoint}}/transfers/${header.transferId}')")
-//                .marshal().json()
+                        "'Request sent to PUT {{outbound.endpoint}}/transfers/${header.transferId}, with body: ${body}')")
+//                .process(exchange -> System.out.println())                        
                 .toD("{{outbound.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true")
                 .unmarshal().json()
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from outbound API, putTransfersById: ${body}', " +
                         "'Tracking the response', 'Verify the response', null)")
+                .end()
 
                 // Add CORS headers
                 .process(corsFilter)
