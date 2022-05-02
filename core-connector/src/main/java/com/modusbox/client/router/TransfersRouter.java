@@ -164,7 +164,7 @@ public class TransfersRouter extends RouteBuilder {
                 })
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Request received, PUT /transfers/${header.transferId}', " +
-                        "null, null, null)")
+                        "null, null, 'Input Payload: ${body}')")
                 /*
                  * BEGIN processing
                  */
@@ -179,7 +179,7 @@ public class TransfersRouter extends RouteBuilder {
                 .unmarshal().json(JsonLibrary.Gson)
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from backend API, putTransfers: ${body}', " +
-                        "'Tracking the response', 'Verify the response', null)")
+                        "'Tracking the response', 'Verify the response', null)") 
 
                 /*
                  * END processing
