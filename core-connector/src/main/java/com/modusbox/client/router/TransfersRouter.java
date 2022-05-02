@@ -160,7 +160,7 @@ public class TransfersRouter extends RouteBuilder {
                 })
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Request received, PUT /transfers/${header.transferId}', " +
-                        "null, null, null)")
+                        "null, null, 'Input Payload: ${body}')")
                 /*
                  * BEGIN processing
                  */
