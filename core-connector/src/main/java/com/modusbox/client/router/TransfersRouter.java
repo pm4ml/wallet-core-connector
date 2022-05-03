@@ -175,10 +175,13 @@ public class TransfersRouter extends RouteBuilder {
                 /*
                  * BEGIN processing
                  */
-
+            
                 .setProperty("origPayload", simple("${body}"))
                 .removeHeaders("CamelHttp*")
-
+            
+                .choice()
+                .when(simple("${body['currentState']} == 'COMPLETED'"))
+//                .process(exchange -> System.out.println())
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
                 .marshal().json(JsonLibrary.Gson)
@@ -187,6 +190,17 @@ public class TransfersRouter extends RouteBuilder {
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from backend API, putTransfers: ${body}', " +
                         "'Tracking the response', 'Verify the response', null)") 
+                .endDoTry()
+            
+                .choice()
+                .when(simple("${body['currentState']} == 'ABORTED'"))
+//                .process(exchange -> System.out.println())
+                .marshal().json(JsonLibrary.Gson)
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Transfer current state ABORTED, PUT /transfers/${header.transferId}', " +
+                        "null, null, null)")
+                .unmarshal().json(JsonLibrary.Gson)
+                .endDoTry()             
 
                 /*
                  * END processing
