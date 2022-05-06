@@ -636,7 +636,7 @@ components:
             transferState:
               $ref: '#/components/schemas/transferState'
               description: State of the transfer.
-              example: COMMITTED           
+              example: COMMITTED
             extensionList:
               $ref: '#/components/schemas/extensionList'
               description: Optional extension, specific to deployment.
