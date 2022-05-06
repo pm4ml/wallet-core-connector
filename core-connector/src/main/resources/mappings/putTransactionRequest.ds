@@ -1,0 +1,4 @@
+{
+    "completedTimestamp": payload.finalNotification.completedTimestamp,
+    "transferState": payload.finalNotification.transferState
+}

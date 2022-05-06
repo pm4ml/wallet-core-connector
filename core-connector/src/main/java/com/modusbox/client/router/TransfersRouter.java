@@ -127,6 +127,12 @@ public class TransfersRouter extends RouteBuilder {
                 })
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Request received, " + ROUTE_ID_POST + "', null, null, 'Input Payload: ${body}')") // default logging
+
+                .marshal().json(JsonLibrary.Gson)
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Request received at: " + ROUTE_ID_POST + "', null, null, 'Input Payload in JSON: ${body}')")
+                .unmarshal().json(JsonLibrary.Gson)
+
                 /*
                  * BEGIN processing
                  */
@@ -153,7 +159,7 @@ public class TransfersRouter extends RouteBuilder {
         }).end()
         ;
 
-        from("direct:putTransfersByTransferId").routeId(ROUTE_ID_PUT)
+        from("direct:putTransfersByTransferId").routeId(ROUTE_ID_PUT).doTry()
                 .process(exchange -> {
                     requestCounterPut.inc(1); // increment Prometheus Counter metric
                     exchange.setProperty(TIMER_NAME_PUT, requestLatencyPut.startTimer()); // initiate Prometheus Histogram metric
@@ -173,22 +179,13 @@ public class TransfersRouter extends RouteBuilder {
                  */
             
                 .setProperty("origPayload", simple("${body}"))
-                .removeHeaders("CamelHttp*")
             
                 .choice()
                 .when(simple("${body['currentState']} == 'COMPLETED'"))
 //                .process(exchange -> System.out.println())
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Transfer current state COMPLETED, PUT /transfers/${header.transferId}', " +
-                        "null, null, null)")
-                .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
-                .setHeader("Content-Type", constant("application/json"))
-                .marshal().json(JsonLibrary.Gson)
-                .toD("{{backend.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true&throwExceptionOnFailure=false")
-                .unmarshal().json(JsonLibrary.Gson)
-                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-                        "'Response from backend API, putTransfers: ${body}', " +
-                        "'Tracking the response', 'Verify the response', null)") 
+                        "null, null, null)") 
                 .endDoTry()
             
                 .choice()
@@ -197,15 +194,32 @@ public class TransfersRouter extends RouteBuilder {
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Transfer current state ABORTED, PUT /transfers/${header.transferId}', " +
                         "null, null, null)")
+                .endDoTry()
+                
+                .marshal().json()
+                .transform(datasonnet("resource:classpath:mappings/putTransactionRequest.ds"))
+                .setBody(simple("${body.content}"))
+                .marshal().json()
+
+                .removeHeaders("CamelHttp*")
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
-                .marshal().json(JsonLibrary.Gson)
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Calling backend API, PUT transfers, at: {{backend.endpoint}}/transfers/${header.transferId}', " +
+                        "'Tracking the request', 'Track the response', 'Input Payload: ${body}')")
                 .toD("{{backend.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true&throwExceptionOnFailure=false")
                 .unmarshal().json(JsonLibrary.Gson)
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from backend API, putTransfers: ${body}', " +
-                        "'Tracking the response', 'Verify the response', null)")  
-                .endDoTry()             
+
+                // TODO: Add error handling for given DFSP's CBS
+//                .choice()
+//                .when(simple("${body['code']} != 200"))
+//                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+//                        "'CBS did not return 200 for, PUT /transfers/${header.transferId}', " +
+//                        "null, null, null)")
+////                .to("direct:catchCBSError")
+//                .endDoTry()
 
                 /*
                  * END processing
