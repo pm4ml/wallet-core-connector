@@ -132,21 +132,17 @@ public class TransfersRouter extends RouteBuilder {
                  */
                 .setProperty("origPayload", simple("${body}"))
                 .removeHeaders("CamelHttp*")
-                // .setHeader(Exchange.HTTP_METHOD, constant("POST"))
-                // .setHeader("Content-Type", constant("application/json"))
-                // .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-                //         "'Calling backend API, postTransfers, POST {{backend.endpoint}}', " +
-                //         "'Tracking the request', 'Track the response', 'Input Payload: ${body}')")
-                // .marshal().json(JsonLibrary.Gson)
-                // .toD("{{backend.endpoint}}/transfers?bridgeEndpoint=true&throwExceptionOnFailure=false")
-                // .unmarshal().json(JsonLibrary.Gson)
-                // .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
-                //         "'Response from backend API, postTransfers: ${body}', " +
-                //         "'Tracking the response', 'Verify the response', null)")
-
-                .setHeader(Exchange.HTTP_RESPONSE_CODE, constant(200))
-                .setBody(constant(""))
-
+                .setHeader(Exchange.HTTP_METHOD, constant("POST"))
+                .setHeader("Content-Type", constant("application/json"))
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Calling backend API, postTransfers, POST {{backend.endpoint}}', " +
+                        "'Tracking the request', 'Track the response', 'Input Payload: ${body}')")
+                .marshal().json(JsonLibrary.Gson)
+                .toD("{{backend.endpoint}}/transfers?bridgeEndpoint=true&throwExceptionOnFailure=false")
+                .unmarshal().json(JsonLibrary.Gson)
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Response from backend API, postTransfers: ${body}', " +
+                        "'Tracking the response', 'Verify the response', null)")
                 /*
                  * END processing
                  */
@@ -182,6 +178,9 @@ public class TransfersRouter extends RouteBuilder {
                 .choice()
                 .when(simple("${body['currentState']} == 'COMPLETED'"))
 //                .process(exchange -> System.out.println())
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Transfer current state COMPLETED, PUT /transfers/${header.transferId}', " +
+                        "null, null, null)")
                 .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
                 .setHeader("Content-Type", constant("application/json"))
                 .marshal().json(JsonLibrary.Gson)
@@ -195,11 +194,17 @@ public class TransfersRouter extends RouteBuilder {
                 .choice()
                 .when(simple("${body['currentState']} == 'ABORTED'"))
 //                .process(exchange -> System.out.println())
-                .marshal().json(JsonLibrary.Gson)
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Transfer current state ABORTED, PUT /transfers/${header.transferId}', " +
                         "null, null, null)")
+                .setHeader(Exchange.HTTP_METHOD, constant("PUT"))
+                .setHeader("Content-Type", constant("application/json"))
+                .marshal().json(JsonLibrary.Gson)
+                .toD("{{backend.endpoint}}/transfers/${header.transferId}?bridgeEndpoint=true&throwExceptionOnFailure=false")
                 .unmarshal().json(JsonLibrary.Gson)
+                .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
+                        "'Response from backend API, putTransfers: ${body}', " +
+                        "'Tracking the response', 'Verify the response', null)")  
                 .endDoTry()             
 
                 /*

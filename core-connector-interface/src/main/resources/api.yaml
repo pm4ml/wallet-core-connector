@@ -637,6 +637,10 @@ components:
               $ref: '#/components/schemas/transferState'
               description: State of the transfer.
               example: COMMITTED
+            fulfilment:
+              type: string
+              description: State of the transfer.
+              example: UNlJ98hZTY_dsw0cAqw4i_UN3v4utt7CZFB4yfLbVFA            
             extensionList:
               $ref: '#/components/schemas/extensionList'
               description: Optional extension, specific to deployment.
@@ -1643,12 +1647,14 @@ components:
         - WAITING_FOR_PARTY_ACCEPTANCE
         - WAITING_FOR_QUOTE_ACCEPTANCE
         - COMPLETED
+        - ABORTED
       description: >
         Below are the allowed values for the enumeration
         - ERROR_OCCURRED An error has occurred during the transfer process.
         - WAITING_FOR_PARTY_ACCEPTANCE `AUTO_ACCEPT_PARTY` is set to "false" and party information has been returned, waiting to be accepted by the Payer DFSP using a `PUT /sendmoney/{transferId}` request.
         - WAITING_FOR_QUOTE_ACCEPTANCE `AUTO_ACCEPT_QUOTE` is set to "false" and quote information has been returned, waiting to be accepted by the Payer DFSP using a `PUT /sendmoney/{transferId}` request.
         - COMPLETED The transfer has completed successfully.
+        - ABORTED The transfer has been ABORTED.
         
     transferStatusResponse:
       type: object
