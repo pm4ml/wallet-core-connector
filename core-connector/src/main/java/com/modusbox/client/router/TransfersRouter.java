@@ -211,6 +211,7 @@ public class TransfersRouter extends RouteBuilder {
                 .unmarshal().json(JsonLibrary.Gson)
                 .to("bean:customJsonMessage?method=logJsonMessage('info', ${header.X-CorrelationId}, " +
                         "'Response from backend API, putTransfers: ${body}', " +
+                        "'Tracking the response', 'Verify the response', null)")
 
                 // TODO: Add error handling for given DFSP's CBS
 //                .choice()
