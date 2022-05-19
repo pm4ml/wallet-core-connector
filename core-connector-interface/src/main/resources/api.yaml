@@ -628,9 +628,7 @@ components:
           $ref: '#/components/schemas/timestamp'
         finalNotification:
           type: object
-          properties:
-            homeTransactionId:
-              $ref: '#/components/schemas/homeTransactionId'          
+          properties:          
             completedTimestamp:
               $ref: '#/components/schemas/timestamp'
               description: Time and date when the transaction was completed.
@@ -645,6 +643,8 @@ components:
           required:
             - completedTimestamp
             - transferState
+        homeTransactionId:
+          $ref: '#/components/schemas/homeTransactionId'
 
     geoCode:
       type: object
