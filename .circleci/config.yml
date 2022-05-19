@@ -10,7 +10,7 @@ executors:
   default-machine:
     working_directory: /home/circleci/project/git
     machine:
-      image: ubuntu-1604:201903-01
+      image: ubuntu-2004:202201-02
 
 
 workflows:
