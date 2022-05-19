@@ -638,7 +638,7 @@ components:
               description: State of the transfer.
               example: COMMITTED
             extensionList:
-              $ref: '#/components/schemas/extensionList'
+              $ref: '#/components/schemas/extensionListComplex'
               description: Optional extension, specific to deployment.
           required:
             - completedTimestamp
