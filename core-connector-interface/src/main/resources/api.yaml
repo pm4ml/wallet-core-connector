@@ -629,6 +629,8 @@ components:
         finalNotification:
           type: object
           properties:
+            homeTransactionId:
+              $ref: '#/components/schemas/homeTransactionId'          
             completedTimestamp:
               $ref: '#/components/schemas/timestamp'
               description: Time and date when the transaction was completed.
